@@ -1,1 +1,69 @@
+Mini Project Code ML
 
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.svm import SVC
+from sklearn.metrics import classification_report, accuracy_score
+import PyPDF2
+import re
+
+# Load the dataset
+df = pd.read_csv('/content/Twitter_Data.csv')  # Provide the path to your dataset
+
+# Drop rows with missing values for 'clean_text' and 'category' columns
+df.dropna(subset=['clean_text', 'category'], inplace=True)
+
+# Randomly select 3000 rows from the dataset
+df_sample = df.sample(n=30000, random_state=42)
+
+# Split the sampled data into training and testing sets
+X = df_sample['clean_text']
+y = df_sample['category']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Vectorize the text data
+vectorizer = TfidfVectorizer(max_features=5000)  # You may need to customize the parameters
+X_train = vectorizer.fit_transform(X_train)
+X_test = vectorizer.transform(X_test)
+
+# Train the model
+model = SVC(kernel='linear')
+model.fit(X_train, y_train)
+
+# Print model accuracy
+y_pred = model.predict(X_test)
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("Classification Report:")
+print(classification_report(y_test, y_pred))
+
+# Function to extract text from PDF
+def extract_text_from_pdf(pdf_path)
+    text = ""
+    with open(pdf_path, 'rb') as file:
+        reader = PyPDF2.PdfReader(file)
+        for page in reader.pages:
+            text += page.extract_text()
+    return text
+
+# Function to clean the text data
+def clean_text(text):
+    text = re.sub(r'\s+', ' ', text)  # Remove extra whitespaces
+    return text
+
+# Load the PDF and extract text
+pdf_path = "/content/policy_on_adoption_of_oss.pdf"  # Provide the path to your PDF file
+text = extract_text_from_pdf(pdf_path)
+
+# Clean the extracted text
+cleaned_text = clean_text(text)
+
+# Vectorize the cleaned text using the existing vectorizer
+X_pdf = vectorizer.transform([cleaned_text])
+
+# Make predictions using the existing trained model
+predicted_sentiment = model.predict(X_pdf)[0]
+
+# Display the predicted sentiment
+sentiment_label = {1: 'Positive', 0: 'Neutral', -1: 'Negative'}
+print("Predicted Sentiment:", sentiment_label[predicted_sentiment])
